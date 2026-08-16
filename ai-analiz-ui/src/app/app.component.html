@@ -1,0 +1,178 @@
+<div style="padding: 30px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 1200px; margin: 0 auto;">
+
+  <!-- LOGO VE HEADER -->
+  <header style="display: flex; align-items: center; gap: 12px; margin-bottom: 40px;">
+    <img src="sayfaici2.png" alt="DOCSENSE Logo" class="header-logo" style="height: 120px; width: auto; object-fit: contain;">
+    <span style="font-size: 22px; font-weight: 800; color: #45afcf; letter-spacing: 0.5px;">DOCSENSE AI DOCUMENT ANALYTICS</span>
+  </header>
+
+  <!-- BAŞLIK -->
+  <div style="margin-bottom: 30px;">
+    <h2 style="color: #000000; margin: 0;">Şartname Analiz & Kayıt Paneli</h2>
+    <p style="color: #666; margin: 6px 0 0 0; font-size: 15px;">Eski ve Yeni PDF teknik şartnamelerinizi yükleyin ya da daha önce kaydettiklerinizden seçin, AI ile fark analizi yapın.</p>
+  </div>
+
+  <!-- DOSYA YÜKLEME VE İSİMLENDİRME KUTULARI -->
+  <div style="display: flex; gap: 20px; max-width: 900px; margin: 0 auto 25px auto;">
+
+    <!-- ESKİ PDF KUTUSU -->
+    <div style="flex: 1; background-color: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+      <label style="font-weight: bold; display: block; margin-bottom: 12px; color: #1e293b;">📄 Eski PDF Belgesi:</label>
+
+      <!-- MOD SEÇİMİ -->
+      <div style="display: flex; gap: 16px; margin-bottom: 14px;">
+        <label style="font-size: 13px; display: flex; align-items: center; gap: 4px; cursor: pointer;">
+          <input type="radio" name="oldMode" value="upload" [(ngModel)]="oldMode"> Yeni Dosya Yükle
+        </label>
+        <label style="font-size: 13px; display: flex; align-items: center; gap: 4px; cursor: pointer;">
+          <input type="radio" name="oldMode" value="existing" [(ngModel)]="oldMode"> Kayıtlılardan Seç
+        </label>
+      </div>
+
+      <!-- YÜKLEME MODU -->
+      <div *ngIf="oldMode === 'upload'">
+        <input type="file" (change)="onOldFileSelected($event)" accept=".pdf" style="width: 100%; margin-bottom: 12px;">
+
+        <div *ngIf="oldFile" style="margin-top: 10px; background-color: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1;">
+          <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 4px;">Belgeye Sistem İsim Ver (Custom Name):</label>
+          <input type="text" [(ngModel)]="oldCustomName" placeholder="Örn: 2025_Ford_CSR_v1" style="width: 100%; padding: 6px 10px; border: 1px solid #94a3b8; border-radius: 4px; font-size: 13px; box-sizing: border-box; margin-bottom: 10px;">
+
+          <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 4px;">Klasör / Başlık (Örn: Ford2025):</label>
+          <input type="text" [(ngModel)]="oldFolderName" placeholder="Örn: Ford2025" style="width: 100%; padding: 6px 10px; border: 1px solid #94a3b8; border-radius: 4px; font-size: 13px; box-sizing: border-box;">
+        </div>
+      </div>
+
+      <!-- KAYITLILARDAN SEÇ MODU -->
+      <div *ngIf="oldMode === 'existing'">
+        <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 4px;">Klasör Seç:</label>
+        <select [(ngModel)]="oldSelectedFolderId" (ngModelChange)="onOldFolderChange()" style="width: 100%; padding: 6px 10px; border: 1px solid #94a3b8; border-radius: 4px; font-size: 13px; margin-bottom: 10px;">
+          <option [ngValue]="null">-- Klasör Seçin --</option>
+          <option *ngFor="let folder of folders" [ngValue]="folder.id">{{ folder.folderName }}</option>
+        </select>
+
+        <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 4px;" *ngIf="oldSelectedFolderId">Belge Seç:</label>
+        <select *ngIf="oldSelectedFolderId" [(ngModel)]="oldSelectedDocumentId" style="width: 100%; padding: 6px 10px; border: 1px solid #94a3b8; border-radius: 4px; font-size: 13px;">
+          <option [ngValue]="null">-- Belge Seçin --</option>
+          <option *ngFor="let doc of oldFolderDocuments" [ngValue]="doc.id">{{ doc.customFileName }}</option>
+        </select>
+
+        <p *ngIf="oldSelectedFolderId && oldFolderDocuments.length === 0" style="font-size: 12px; color: #94a3b8; margin-top: 8px;">Bu klasörde kayıtlı belge yok.</p>
+      </div>
+    </div>
+
+    <!-- YENİ PDF KUTUSU -->
+    <div style="flex: 1; background-color: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+      <label style="font-weight: bold; display: block; margin-bottom: 12px; color: #1e293b;">📄 Yeni PDF Belgesi:</label>
+
+      <!-- MOD SEÇİMİ -->
+      <div style="display: flex; gap: 16px; margin-bottom: 14px;">
+        <label style="font-size: 13px; display: flex; align-items: center; gap: 4px; cursor: pointer;">
+          <input type="radio" name="newMode" value="upload" [(ngModel)]="newMode"> Yeni Dosya Yükle
+        </label>
+        <label style="font-size: 13px; display: flex; align-items: center; gap: 4px; cursor: pointer;">
+          <input type="radio" name="newMode" value="existing" [(ngModel)]="newMode"> Kayıtlılardan Seç
+        </label>
+      </div>
+
+      <!-- YÜKLEME MODU -->
+      <div *ngIf="newMode === 'upload'">
+        <input type="file" (change)="onNewFileSelected($event)" accept=".pdf" style="width: 100%; margin-bottom: 12px;">
+
+        <div *ngIf="newFile" style="margin-top: 10px; background-color: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1;">
+          <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 4px;">Belgeye Sistem İsim Ver (Custom Name):</label>
+          <input type="text" [(ngModel)]="newCustomName" placeholder="Örn: 2026_Ford_CSR_v2" style="width: 100%; padding: 6px 10px; border: 1px solid #94a3b8; border-radius: 4px; font-size: 13px; box-sizing: border-box; margin-bottom: 10px;">
+
+          <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 4px;">Klasör / Başlık (Örn: Ford2025):</label>
+          <input type="text" [(ngModel)]="newFolderName" placeholder="Örn: Ford2025" style="width: 100%; padding: 6px 10px; border: 1px solid #94a3b8; border-radius: 4px; font-size: 13px; box-sizing: border-box;">
+        </div>
+      </div>
+
+      <!-- KAYITLILARDAN SEÇ MODU -->
+      <div *ngIf="newMode === 'existing'">
+        <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 4px;">Klasör Seç:</label>
+        <select [(ngModel)]="newSelectedFolderId" (ngModelChange)="onNewFolderChange()" style="width: 100%; padding: 6px 10px; border: 1px solid #94a3b8; border-radius: 4px; font-size: 13px; margin-bottom: 10px;">
+          <option [ngValue]="null">-- Klasör Seçin --</option>
+          <option *ngFor="let folder of folders" [ngValue]="folder.id">{{ folder.folderName }}</option>
+        </select>
+
+        <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 4px;" *ngIf="newSelectedFolderId">Belge Seç:</label>
+        <select *ngIf="newSelectedFolderId" [(ngModel)]="newSelectedDocumentId" style="width: 100%; padding: 6px 10px; border: 1px solid #94a3b8; border-radius: 4px; font-size: 13px;">
+          <option [ngValue]="null">-- Belge Seçin --</option>
+          <option *ngFor="let doc of newFolderDocuments" [ngValue]="doc.id">{{ doc.customFileName }}</option>
+        </select>
+
+        <p *ngIf="newSelectedFolderId && newFolderDocuments.length === 0" style="font-size: 12px; color: #94a3b8; margin-top: 8px;">Bu klasörde kayıtlı belge yok.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ANALİZ VE KAYDET BUTONU -->
+  <div style="text-align: center; margin-bottom: 30px;">
+   <button (click)="analyzePdfs()"
+        [disabled]="isLoading || !canAnalyze"
+        [style.opacity]="!canAnalyze ? 0.6 : 1"
+        style="padding: 12px 32px; background-color: #1a237e; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+      {{ isLoading ? '⚡ Kaydediliyor & Analiz Ediliyor...' : '🔍 Belgeleri Kaydet ve Analiz Et' }}
+    </button>
+  </div>
+
+  <!-- Yükleniyor Ekranı -->
+  <div *ngIf="isLoading" style="text-align: center; padding: 40px;">
+    <h3>⏳ Belgeler taranıyor ve maddeler eşleştiriliyor...</h3>
+    <p>Belgeler veritabanına kaydediliyor, tüm maddeler ve derin alt başlıklar satır satır karşılaştırılıyor, lütfen bekleyin.</p>
+  </div>
+
+  <!-- SONUÇLAR LİSTESİ -->
+  <div *ngIf="results && results.length > 0 && !isLoading" style="margin-top: 30px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h2>📊 Analiz Sonuçları ({{ results.length }} Madde)</h2>
+      <button (click)="downloadCsv()" style="padding: 10px 18px; background-color: #107c41; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+        📥 Excel/CSV Olarak İndir
+      </button>
+    </div>
+
+    <div *ngFor="let item of results" style="border: 1px solid #e0e0e0; padding: 20px; margin-bottom: 20px; border-radius: 10px; background-color: #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+        <div>
+          <span style="font-size: 1.1em; font-weight: bold; color: #2c3e50;">Madde {{ item.MaddeNo || item.maddeNo }}: {{ item.AnaBaslik || item.anaBaslik }}</span>
+          <div style="font-size: 0.9em; color: #7f8c8d; margin-top: 2px;" *ngIf="item.AltBaslik || item.altBaslik">
+            Alt Başlık: {{ item.AltBaslik || item.altBaslik }}
+          </div>
+        </div>
+
+        <span [style.backgroundColor]="(item.Durum || item.durum) === 'Değişti' ? '#fff3cd' : ((item.Durum || item.durum) === 'Eklendi' ? '#d4edda' : ((item.Durum || item.durum) === 'Kaldırıldı' ? '#f8d7da' : '#e2e3e5'))"
+              [style.color]="(item.Durum || item.durum) === 'Değişti' ? '#856404' : ((item.Durum || item.durum) === 'Eklendi' ? '#155724' : ((item.Durum || item.durum) === 'Kaldırıldı' ? '#721c24' : '#383d41'))"
+              style="padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 0.85em;">
+          {{ item.Durum || item.durum }}
+        </span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px;">
+        <div style="background-color: #fdf2f2; padding: 12px; border-radius: 6px; border-left: 4px solid #e74c3c;">
+          <strong style="color: #c0392b; font-size: 0.9em;">📄 Eski Metin:</strong>
+          <p style="margin-top: 5px; font-size: 0.95em; color: #333; white-space: pre-line;">
+            {{ item.EskiMetin || item.eskiMetin || item.OldText || item.oldText || '-' }}
+          </p>
+        </div>
+
+        <div style="background-color: #f0f9f4; padding: 12px; border-radius: 6px; border-left: 4px solid #2ecc71;">
+          <strong style="color: #27ae60; font-size: 0.9em;">📝 Yeni Metin:</strong>
+          <p style="margin-top: 5px; font-size: 0.95em; color: #333; white-space: pre-line;">
+            {{ item.YeniMetin || item.yeniMetin || item.NewText || item.newText || '-' }}
+          </p>
+        </div>
+      </div>
+
+      <div style="background-color: #ebf5fb; padding: 12px; border-radius: 6px; border-left: 4px solid #2980b9;">
+        <strong style="color: #2980b9; font-size: 0.9em;">🤖 AI Analizi & Fark Sebebi:</strong>
+        <p style="margin-top: 5px; font-size: 0.95em; color: #2c3e50;">
+          {{ item.AiAnaliz || item.aiAnaliz || item.Analysis || item.analysis }}
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+</div>
