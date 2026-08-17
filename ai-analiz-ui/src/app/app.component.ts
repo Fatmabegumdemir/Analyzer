@@ -164,9 +164,13 @@ export class AppComponent implements OnInit {
   const escape = (val: string): string =>
     `"${(val || '').replace(/"/g, '""')}"`;
 
+  // Excel'in madde numarasını tarih sanmasını engellemek için formül-metin hilesi
+  const forceText = (val: string): string =>
+    `="${(val || '').replace(/"/g, '""')}"`;
+
   let csvContent = "Madde No;Ana Baslik;Alt Baslik;Durum;Eski Metin;Yeni Metin;Ai Analiz\n";
   this.results.forEach(row => {
-    const madde = escape(row.MaddeNo || row.maddeNo || '');
+    const madde = forceText(row.MaddeNo || row.maddeNo || '');
     const anaBaslik = escape(row.AnaBaslik || row.anaBaslik || '');
     const altBaslik = escape(row.AltBaslik || row.altBaslik || '');
     const durum = escape(row.Durum || row.durum || '');
@@ -176,7 +180,6 @@ export class AppComponent implements OnInit {
     csvContent += `${madde};${anaBaslik};${altBaslik};${durum};${eskiMetin};${yeniMetin};${aiAnaliz}\n`;
   });
 
-  // UTF-8 BOM ekle — Excel'in Türkçe karakterleri doğru okuması için şart
   const bom = "\uFEFF";
   const blob = new Blob([bom + csvContent], { type: "text/csv;charset=utf-8;" });
 

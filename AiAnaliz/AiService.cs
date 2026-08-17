@@ -14,7 +14,7 @@ namespace AiAnaliz;
 public class AiService
 {
     // 🔥 Güncel API Key'iniz
-    private readonly string _apiKey = "AQ.Ab8RN6J7gsKCj3s3eZDyDdj7RJXK5yHd3sbJDCwt5IZb2RcuWw";
+    private readonly string _apiKey = "AQ.Ab8RN6KgMHJVp8QW2zXU9ANq1ohQ9GHS8END3-yiZSxDftQUng";
     private readonly HttpClient _httpClient = new HttpClient() { Timeout = TimeSpan.FromMinutes(10) };
 
     private readonly string _analysisPrompt = @"<role>
