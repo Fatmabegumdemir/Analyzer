@@ -159,25 +159,35 @@ export class AppComponent implements OnInit {
         });
     }
     downloadCsv(): void {
-    if (!this.results || this.results.length === 0) return;
+  if (!this.results || this.results.length === 0) return;
 
-    let csvContent = "data:text/csv;charset=utf-8,Madde No,Ana Baslik,Alt Baslik,Durum,Ai Analiz\n";
-    this.results.forEach(row => {
-      const madde = `"${row.MaddeNo || row.maddeNo || ''}"`;
-      const anaBaslik = `"${(row.AnaBaslik || row.anaBaslik || '').replace(/"/g, '""')}"`;
-      const altBaslik = `"${(row.AltBaslik || row.altBaslik || '').replace(/"/g, '""')}"`;
-      const durum = `"${row.Durum || row.durum || ''}"`;
-      const aiAnaliz = `"${(row.AiAnaliz || row.aiAnaliz || '').replace(/"/g, '""')}"`;
-      csvContent += `${madde},${anaBaslik},${altBaslik},${durum},${aiAnaliz}\n`;
-    });
+  const escape = (val: string): string =>
+    `"${(val || '').replace(/"/g, '""')}"`;
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "analiz_sonuclari.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
+  let csvContent = "Madde No;Ana Baslik;Alt Baslik;Durum;Eski Metin;Yeni Metin;Ai Analiz\n";
+  this.results.forEach(row => {
+    const madde = escape(row.MaddeNo || row.maddeNo || '');
+    const anaBaslik = escape(row.AnaBaslik || row.anaBaslik || '');
+    const altBaslik = escape(row.AltBaslik || row.altBaslik || '');
+    const durum = escape(row.Durum || row.durum || '');
+    const eskiMetin = escape(row.EskiMetin || row.eskiMetin || '');
+    const yeniMetin = escape(row.YeniMetin || row.yeniMetin || '');
+    const aiAnaliz = escape(row.AiAnaliz || row.aiAnaliz || '');
+    csvContent += `${madde};${anaBaslik};${altBaslik};${durum};${eskiMetin};${yeniMetin};${aiAnaliz}\n`;
+  });
+
+  // UTF-8 BOM ekle — Excel'in Türkçe karakterleri doğru okuması için şart
+  const bom = "\uFEFF";
+  const blob = new Blob([bom + csvContent], { type: "text/csv;charset=utf-8;" });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", "analiz_sonuclari.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
   
 }

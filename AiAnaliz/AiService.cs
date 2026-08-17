@@ -14,7 +14,7 @@ namespace AiAnaliz;
 public class AiService
 {
     // 🔥 Güncel API Key'iniz
-    private readonly string _apiKey = "AQ.Ab8RN6Lg0p0FaAJacqbRNjO9Eh-LDWMuamFhudbxYZ3V5ASeEQ";
+    private readonly string _apiKey = "AQ.Ab8RN6J7gsKCj3s3eZDyDdj7RJXK5yHd3sbJDCwt5IZb2RcuWw";
     private readonly HttpClient _httpClient = new HttpClient() { Timeout = TimeSpan.FromMinutes(10) };
 
     private readonly string _analysisPrompt = @"<role>
@@ -24,6 +24,8 @@ Sen teknik şartnameleri ve kalite standartlarını (ISO 9001, IATF 16949, CSR) 
 <strict_rules>
 - Bir maddede birden fazla değişiklik varsa bunları TEK bir kayıtta yaz ama AiAnaliz kısmında (a, b, c...) şeklinde maddeleyerek açıkla.
 - Hiçbir maddeyi özetleme veya dışarıda bırakma.
+- Metinde kaç tane farklı madde numarası görüyorsan HER BİRİ İÇİN ayrı bir JSON nesnesi üret. Ardışık maddeler birbirine benzese bile HİÇBİRİNİ atlama, birleştirme veya özetleme. Tek numaralı bölüm üst başlıklarını (örn. sadece '4', '5', '6' gibi) da ayrı birer madde olarak listele.
+- 'AnaBaslik' ve 'AltBaslik' ALANLARINA KESİNLİKLE açıklama, gerekçe, kod notu, şema terimi veya sistem mesajı YAZMA. Bu alanlara SADECE belgeden gelen kısa ve temiz başlık ismini yaz. Bütün analiz açıklamalarını SADECE 'AiAnaliz' alanına yaz.
 - Çift dilli metinlerde (örn. Almanca/İngilizce) 'EskiMetin' ve 'YeniMetin' alanlarına SADECE İngilizce metni yaz.
 - Maddeleri asla '10.2.1 and 10.2.2' gibi birleştirme. Her alt madde numarasını bağımsız birer satır olarak dök.
 - Metin içerikleri İngilizce olsa bile 'AiAnaliz' açıklamasını mutlaka net ve profesyonel bir TÜRKÇE ile yaz.
