@@ -13,9 +13,13 @@ namespace AiAnaliz;
 
 public class AiService
 {
-    // 🔥 Güncel API Key'iniz
-    private readonly string _apiKey = "AQ.Ab8RN6KgMHJVp8QW2zXU9ANq1ohQ9GHS8END3-yiZSxDftQUng";
+    private readonly string _apiKey;
     private readonly HttpClient _httpClient = new HttpClient() { Timeout = TimeSpan.FromMinutes(10) };
+
+    public AiService(string apiKey)
+    {
+        _apiKey = apiKey ?? string.Empty;
+    }
 
     private readonly string _analysisPrompt = @"<role>
 Sen teknik şartnameleri ve kalite standartlarını (ISO 9001, IATF 16949, CSR) satır satır karşılaştıran kıdemli bir kalite denetçisisin. Görevin ESKİ ve YENİ belge arasındaki maddeleri kıyaslamak ve farkları tespit etmektir.

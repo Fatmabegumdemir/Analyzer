@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { CsrAiItem } from '../../csr-item.model';
+import { CsrAiItem } from '../models/csr-item.model';
 
 @Injectable({
   providedIn: 'root'

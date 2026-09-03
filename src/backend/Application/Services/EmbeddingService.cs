@@ -10,7 +10,12 @@ namespace Analyzer.Services;
 public class EmbeddingService
 {
     private readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
-    private readonly string _apiKey = "AQ.Ab8RN6KgMHJVp8QW2zXU9ANq1ohQ9GHS8END3-yiZSxDftQUng"; // ⚠️ Kendi API Key'ini koy
+    private readonly string _apiKey;
+
+    public EmbeddingService(string apiKey)
+    {
+        _apiKey = apiKey ?? string.Empty;
+    }
 
     public async Task<float[]> GetEmbeddingAsync(string text)
     {

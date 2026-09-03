@@ -12,10 +12,12 @@ Console.WriteLine($"[DEBUG] Kullanılan connection string: {connectionString}");
 builder.Services.AddDbContext<AppDBContext>(options =>
     options.UseNpgsql(connectionString, o => o.UseVector()));
 
+var geminiApiKey = builder.Configuration["Gemini:ApiKey"] ?? string.Empty;
+
 // SERVİSLER
 builder.Services.AddScoped<PdfParserService>();
-builder.Services.AddScoped<AiService>();
-builder.Services.AddScoped<EmbeddingService>();
+builder.Services.AddScoped(_ => new AiService(geminiApiKey));
+builder.Services.AddScoped(_ => new EmbeddingService(geminiApiKey));
 builder.Services.AddScoped<DocumentService>();
 
 // 🔥 YENİ EKLENEN: JSON case-insensitive ayarı

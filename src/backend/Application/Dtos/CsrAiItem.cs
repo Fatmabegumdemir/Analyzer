@@ -4,7 +4,7 @@ namespace AiAnaliz;
 
 public class CsrAiItem
 {
-    [JsonPropertyName("maddeNo")]  // camelCase
+    [JsonPropertyName("maddeNo")]  
 public string MaddeNo { get; set; } = "";
 
     [JsonPropertyName("AnaBaslik")]
