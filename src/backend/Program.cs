@@ -6,7 +6,7 @@ using Analyzer;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// DB Bağlantısı
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 Console.WriteLine($"[DEBUG] Kullanılan connection string: {connectionString}");
 builder.Services.AddDbContext<AppDBContext>(options =>
@@ -14,13 +14,13 @@ builder.Services.AddDbContext<AppDBContext>(options =>
 
 var geminiApiKey = builder.Configuration["Gemini:ApiKey"] ?? string.Empty;
 
-// SERVİSLER
+
 builder.Services.AddScoped<PdfParserService>();
 builder.Services.AddScoped(_ => new AiService(geminiApiKey));
 builder.Services.AddScoped(_ => new EmbeddingService(geminiApiKey));
 builder.Services.AddScoped<DocumentService>();
 
-// 🔥 YENİ EKLENEN: JSON case-insensitive ayarı
+
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.PropertyNameCaseInsensitive = true;
@@ -73,7 +73,7 @@ app.MapGet("/api/Folder/{folderId:int}/documents", async (int folderId, [FromSer
 })
 .RequireCors("AllowAll");
 
-// Analiz Endpoint'i
+
 app.MapPost("/api/Document/analyze", async (
     HttpRequest request,
     [FromServices] DocumentService docService) =>

@@ -6,7 +6,7 @@ namespace Analyzer.Services;
 
 public class PdfParserService
 {
-    // 1. PDF'ten düz metin çıkarma
+    
     public string ExtractTextFromPdf(Stream pdfStream)
 {
     if (pdfStream == null || pdfStream.Length == 0) return string.Empty;
@@ -35,13 +35,13 @@ public List<string> ExtractPages(Stream pdfStream)
     return pdfDocument.GetPages().Select(p => p.Text.Trim()).ToList();
 }
 
-    // 🎯 2. Metni Maddelere ve Alt Başlıklara Ayırma Metodu (YENİ EKLENEN KISIM)
+    
     public List<DocumentSection> ParseSections(string fullText)
     {
         var sections = new List<DocumentSection>();
         if (string.IsNullOrWhiteSpace(fullText)) return sections;
 
-        // "1. Scope", "1.1 General Requirements", "3.2.1 Quality Standard" gibi madde kalıplarını yakalar
+        
         var linePattern = new Regex(@"^(?<maddeNo>\d+(\.\d+)*)\s+(?<baslik>[^\r\n]+)", RegexOptions.Multiline);
 
         var lines = fullText.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
@@ -55,7 +55,7 @@ public List<string> ExtractPages(Stream pdfStream)
 
             if (match.Success)
             {
-                // Önceki madde varsa listeye ekle
+                
                 if (currentSection != null)
                 {
                     sections.Add(currentSection);
@@ -64,13 +64,13 @@ public List<string> ExtractPages(Stream pdfStream)
                 string maddeNo = match.Groups["maddeNo"].Value;
                 string baslikText = match.Groups["baslik"].Value.Trim();
 
-                // 💡 Alt Başlık Garantisi: Başlığı ve Madde Seviyesini Ayrıştırıyoruz
+                
                 string anaBaslik = baslikText;
-                string altBaslik = baslikText; // Default olarak baslikText veriyoruz ki asla null/boş kalmasın
+                string altBaslik = baslikText; 
 
                 if (maddeNo.Contains("."))
                 {
-                    // Örneğin 1.1 veya 3.2.1 gibi alt maddeler için
+                    
                     altBaslik = baslikText;
                 }
 
@@ -78,24 +78,24 @@ public List<string> ExtractPages(Stream pdfStream)
                 {
                     MaddeNo = maddeNo,
                     AnaBaslik = string.IsNullOrWhiteSpace(anaBaslik) ? "Genel Şartlar" : anaBaslik,
-                    AltBaslik = string.IsNullOrWhiteSpace(altBaslik) ? "Detay Maddesi" : altBaslik, // 👈 NOT-NULL GARANTİSİ
+                    AltBaslik = string.IsNullOrWhiteSpace(altBaslik) ? "Detay Maddesi" : altBaslik, 
                     Content = trimmedLine
                 };
             }
             else if (currentSection != null)
             {
-                // Başlık satırı değilse mevcut maddenin içeriğine ekle
+                
                 currentSection.Content += "\n" + trimmedLine;
             }
         }
 
-        // Son kalan maddeyi de ekle
+        
         if (currentSection != null)
         {
             sections.Add(currentSection);
         }
 
-        // Eğer regex hiç madde yakalayamadıysa (düz metin ise) belgenin tamamını tek madde yapma fallback'i
+        
         if (sections.Count == 0 && !string.IsNullOrWhiteSpace(fullText))
         {
             sections.Add(new DocumentSection

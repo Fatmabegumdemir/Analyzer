@@ -63,8 +63,7 @@ namespace Analyzer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FileHash")
-                        .IsUnique();
+                    b.HasIndex("FolderId");
 
                     b.ToTable("Documents");
                 });
@@ -127,8 +126,8 @@ namespace Analyzer.Migrations
                         .HasColumnName("DocumentId");
 
                     b.Property<Vector>("Embedding")
-                        .HasColumnType("vector(1536)")
-                        .HasColumnName("Empedding");
+                        .HasColumnType("vector(768)")
+                        .HasColumnName("Embedding");
 
                     b.Property<string>("MaddeNo")
                         .IsRequired()
@@ -140,6 +139,38 @@ namespace Analyzer.Migrations
                     b.HasIndex("DocumentId");
 
                     b.ToTable("DocumentSections");
+                });
+
+            modelBuilder.Entity("Analyzer.Entities.Folder", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("Id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("CreatedAt");
+
+                    b.Property<string>("FolderName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("FolderName");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Folders");
+                });
+
+            modelBuilder.Entity("Analyzer.Entities.Document", b =>
+                {
+                    b.HasOne("Analyzer.Entities.Folder", "Folder")
+                        .WithMany("Documents")
+                        .HasForeignKey("FolderId");
+
+                    b.Navigation("Folder");
                 });
 
             modelBuilder.Entity("Analyzer.Entities.DocumentRevision", b =>
@@ -175,6 +206,11 @@ namespace Analyzer.Migrations
             modelBuilder.Entity("Analyzer.Entities.Document", b =>
                 {
                     b.Navigation("Sections");
+                });
+
+            modelBuilder.Entity("Analyzer.Entities.Folder", b =>
+                {
+                    b.Navigation("Documents");
                 });
 #pragma warning restore 612, 618
         }

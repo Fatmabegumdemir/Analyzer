@@ -73,7 +73,7 @@ public class DocumentService
             throw new Exception("Yeni belge için ya dosya yüklenmeli ya da kayıtlı bir dosya seçilmelidir.");
         }
 
-        // 1. Önceki analiz sonucu varsa getir
+        
         var existingRevision = await _context.DocumentRevisions
             .FirstOrDefaultAsync(r => r.OldDocumentId == oldDoc.Id && r.NewDocumentId == newDoc.Id);
 
@@ -83,7 +83,7 @@ public class DocumentService
             return JsonSerializer.Deserialize<List<CsrAiItem>>(existingRevision.AnalysisResultJson, options) ?? new List<CsrAiItem>();
         }
 
-        // 2. Eski ve Yeni Maddeleri Çek
+        
         var oldSections = await _context.DocumentSections.Where(s => s.DocumentId == oldDoc.Id).ToListAsync();
         var newSections = await _context.DocumentSections.Where(s => s.DocumentId == newDoc.Id).ToListAsync();
 
@@ -92,7 +92,7 @@ public class DocumentService
         var claimedOldSectionIds = new HashSet<int>();
         var pairsToAnalyze = new List<object>();
 
-        // 🎯 KURAL 1: Birebir Madde Numarası Eşleşenler
+        
         foreach (var oldSec in oldSections)
         {
             if (claimedOldSectionIds.Contains(oldSec.Id)) continue;
@@ -142,7 +142,7 @@ public class DocumentService
             }
         }
 
-        // 🎯 KURAL 2: Eşleşmeyen Eski Maddeleri Değerlendirme (Kaldırıldı Kontrolü)
+        
         foreach (var oldSec in oldSections.Where(s => !claimedOldSectionIds.Contains(s.Id)))
         {
             claimedOldSectionIds.Add(oldSec.Id);
@@ -163,7 +163,7 @@ public class DocumentService
             });
         }
 
-        // 🎯 KURAL 3: Eşleşmeyen Yeni Maddeleri Değerlendirme (Eklendi Kontrolü)
+        
         foreach (var newSec in newSections.Where(s => !claimedNewSectionIds.Contains(s.Id)))
         {
             claimedNewSectionIds.Add(newSec.Id);
@@ -184,7 +184,7 @@ public class DocumentService
             });
         }
 
-        // 🎯 KURAL 4: Değişen Maddeleri AI ile Karşılaştırma
+        
         if (pairsToAnalyze.Any())
         {
             string pairsJson = JsonSerializer.Serialize(pairsToAnalyze);
@@ -209,7 +209,7 @@ public class DocumentService
             .OrderBy(x => x.MaddeNo, new ClauseComparer())
             .ToList();
 
-        // 5. Sonuçları Kaydet
+        
         string finalResultJson = JsonSerializer.Serialize(analysisResults);
         var newRevision = new DocumentRevision
         {

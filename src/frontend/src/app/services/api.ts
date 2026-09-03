@@ -7,7 +7,7 @@ import { CsrAiItem } from '../models/csr-item.model';
   providedIn: 'root'
 })
 export class ApiService {
-  // C# Web API adresi (Port 7001)
+  
   private apiUrl = 'https://localhost:7001/api/analysis'; 
 
   constructor(private http: HttpClient) { }
@@ -17,7 +17,7 @@ export class ApiService {
     formData.append('oldPdf', oldPdf);
     formData.append('newPdf', newPdf);
 
-    // 🎯 DİKKAT: Burada çift tırnak değil, backtick ( ` ) kullanıyoruz!
+    
     return this.http.post<CsrAiItem[]>(`${this.apiUrl}/analyze`, formData);
   }
 }

@@ -4,10 +4,10 @@
 
 namespace Analyzer.Migrations
 {
-    /// <inheritdoc />
+    
     public partial class AddFileHashToDocuments : Migration
     {
-        /// <inheritdoc />
+        
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<string>(
@@ -24,7 +24,7 @@ namespace Analyzer.Migrations
                 unique: true);
         }
 
-        /// <inheritdoc />
+        
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropIndex(

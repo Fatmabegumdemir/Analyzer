@@ -34,7 +34,7 @@ public class EmbeddingService
 
         var json = JsonSerializer.Serialize(requestBody);
 
-        // 🔄 503 (Yoğunluk) durumunda 3 defa otomatik yeniden deneme
+        
         int maxRetries = 3;
         for (int attempt = 1; attempt <= maxRetries; attempt++)
         {
@@ -43,7 +43,7 @@ public class EmbeddingService
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 var response = await _httpClient.PostAsync(url, content);
 
-                // Google geçici yoğunluk döndüyse azıcık bekleip tekrar dene
+                
                 if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable && attempt < maxRetries)
                 {
                     await Task.Delay(1500);

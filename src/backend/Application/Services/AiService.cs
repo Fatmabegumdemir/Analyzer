@@ -36,7 +36,7 @@ Sen teknik şartnameleri ve kalite standartlarını (ISO 9001, IATF 16949, CSR) 
 - Sayfa numarası, footer, header veya telif hakkı gibi tekrarlayan bilgileri analiz dışı tut.
 </strict_rules>";
 
-    // 🌐 1. İKİ BELGEYİ KARŞILAŞTIRAN ANA ANALİZ METODU
+    
     public async Task<string> AnalyzePdfsAsync(string oldBase64, string newBase64)
     {
         string jsonResult = await CallGeminiApiAsync(_analysisPrompt, oldBase64, newBase64);
@@ -104,7 +104,7 @@ YENİ BELGE MADDELERİ:
         return JsonSerializer.Serialize(sorted);
     }
 
-    // 🎯 DEĞİŞEN MADDE ÇİFTLERİNİ ANALİZ EDEN METOT
+    
     public async Task<string> AnalyzeChangedSectionsAsync(string pairsJson)
     {
         string prompt = $@"Sana eski ve yeni şartnamede Madde No'ları eşleşen ancak metinleri veya başlıkları farklı olan maddeler JSON formatında verilmiştir.
@@ -157,7 +157,7 @@ DEĞİŞEN MADDELER:
         return ConsolidateAndSort(jsonResult);
     }
 
-    // 🎯 2. TEK BİR BELGEYİ AI İLE MADDELERİNE PARÇALAYAN METOT
+    
    public async Task<string> ParseRawTextToSectionsAsync(string rawText)
 {
     string prompt = $@"

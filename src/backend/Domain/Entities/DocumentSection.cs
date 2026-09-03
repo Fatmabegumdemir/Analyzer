@@ -26,7 +26,7 @@ public class DocumentSection
     [Column("Content")]
     public string Content { get; set; } = string.Empty;
 
-    // Veritabanındaki sütun adı 'Empedding' olduğu için:
+    
     [Column("Embedding")]
     public Vector? Embedding { get; set; }
 }

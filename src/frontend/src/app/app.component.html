@@ -1,25 +1,25 @@
 <div style="padding: 30px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 1200px; margin: 0 auto;">
 
-  <!-- LOGO VE HEADER -->
+  
   <header style="display: flex; align-items: center; gap: 12px; margin-bottom: 40px;">
     <img src="sayfaici2.png" alt="DOCSENSE Logo" class="header-logo" style="height: 120px; width: auto; object-fit: contain;">
     <span style="font-size: 22px; font-weight: 800; color: #45afcf; letter-spacing: 0.5px;">DOCSENSE AI DOCUMENT ANALYTICS</span>
   </header>
 
-  <!-- BAŞLIK -->
+  
   <div style="margin-bottom: 30px;">
     <h2 style="color: #000000; margin: 0;">Şartname Analiz & Kayıt Paneli</h2>
     <p style="color: #666; margin: 6px 0 0 0; font-size: 15px;">Eski ve Yeni PDF teknik şartnamelerinizi yükleyin ya da daha önce kaydettiklerinizden seçin, AI ile fark analizi yapın.</p>
   </div>
 
-  <!-- DOSYA YÜKLEME VE İSİMLENDİRME KUTULARI -->
+  
   <div style="display: flex; gap: 20px; max-width: 900px; margin: 0 auto 25px auto;">
 
-    <!-- ESKİ PDF KUTUSU -->
+    
     <div style="flex: 1; background-color: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
       <label style="font-weight: bold; display: block; margin-bottom: 12px; color: #1e293b;">📄 Eski PDF Belgesi:</label>
 
-      <!-- MOD SEÇİMİ -->
+      
       <div style="display: flex; gap: 16px; margin-bottom: 14px;">
         <label style="font-size: 13px; display: flex; align-items: center; gap: 4px; cursor: pointer;">
           <input type="radio" name="oldMode" value="upload" [(ngModel)]="oldMode"> Yeni Dosya Yükle
@@ -29,7 +29,7 @@
         </label>
       </div>
 
-      <!-- YÜKLEME MODU -->
+      
       <div *ngIf="oldMode === 'upload'">
         <input type="file" (change)="onOldFileSelected($event)" accept=".pdf" style="width: 100%; margin-bottom: 12px;">
 
@@ -42,7 +42,7 @@
         </div>
       </div>
 
-      <!-- KAYITLILARDAN SEÇ MODU -->
+      
       <div *ngIf="oldMode === 'existing'">
         <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 4px;">Klasör Seç:</label>
         <select [(ngModel)]="oldSelectedFolderId" (ngModelChange)="onOldFolderChange()" style="width: 100%; padding: 6px 10px; border: 1px solid #94a3b8; border-radius: 4px; font-size: 13px; margin-bottom: 10px;">
@@ -60,11 +60,11 @@
       </div>
     </div>
 
-    <!-- YENİ PDF KUTUSU -->
+    
     <div style="flex: 1; background-color: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
       <label style="font-weight: bold; display: block; margin-bottom: 12px; color: #1e293b;">📄 Yeni PDF Belgesi:</label>
 
-      <!-- MOD SEÇİMİ -->
+      
       <div style="display: flex; gap: 16px; margin-bottom: 14px;">
         <label style="font-size: 13px; display: flex; align-items: center; gap: 4px; cursor: pointer;">
           <input type="radio" name="newMode" value="upload" [(ngModel)]="newMode"> Yeni Dosya Yükle
@@ -74,7 +74,7 @@
         </label>
       </div>
 
-      <!-- YÜKLEME MODU -->
+      
       <div *ngIf="newMode === 'upload'">
         <input type="file" (change)="onNewFileSelected($event)" accept=".pdf" style="width: 100%; margin-bottom: 12px;">
 
@@ -87,7 +87,7 @@
         </div>
       </div>
 
-      <!-- KAYITLILARDAN SEÇ MODU -->
+      
       <div *ngIf="newMode === 'existing'">
         <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 4px;">Klasör Seç:</label>
         <select [(ngModel)]="newSelectedFolderId" (ngModelChange)="onNewFolderChange()" style="width: 100%; padding: 6px 10px; border: 1px solid #94a3b8; border-radius: 4px; font-size: 13px; margin-bottom: 10px;">
@@ -107,7 +107,7 @@
 
   </div>
 
-  <!-- ANALİZ VE KAYDET BUTONU -->
+  
   <div style="text-align: center; margin-bottom: 30px;">
    <button (click)="analyzePdfs()"
         [disabled]="isLoading || !canAnalyze"
@@ -117,13 +117,13 @@
     </button>
   </div>
 
-  <!-- Yükleniyor Ekranı -->
+  
   <div *ngIf="isLoading" style="text-align: center; padding: 40px;">
     <h3>⏳ Belgeler taranıyor ve maddeler eşleştiriliyor...</h3>
     <p>Belgeler veritabanına kaydediliyor, tüm maddeler ve derin alt başlıklar satır satır karşılaştırılıyor, lütfen bekleyin.</p>
   </div>
 
-  <!-- SONUÇLAR LİSTESİ -->
+  
   <div *ngIf="results && results.length > 0 && !isLoading" style="margin-top: 30px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <h2>📊 Analiz Sonuçları ({{ results.length }} Madde)</h2>

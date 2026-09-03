@@ -7,10 +7,10 @@ using Pgvector;
 
 namespace Analyzer.Migrations
 {
-    /// <inheritdoc />
+    
     public partial class InitialCreate : Migration
     {
-        /// <inheritdoc />
+        
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterDatabase()
@@ -99,7 +99,7 @@ namespace Analyzer.Migrations
                 column: "DocumentRevisionId");
         }
 
-        /// <inheritdoc />
+        
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(

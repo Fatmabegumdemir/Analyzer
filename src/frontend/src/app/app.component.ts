@@ -18,7 +18,7 @@ interface DocumentDto{
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule], // 👈 Hataları çözen kritik modül içe aktarımları!
+  imports: [CommonModule, FormsModule, HttpClientModule], 
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
@@ -164,7 +164,7 @@ export class AppComponent implements OnInit {
   const escape = (val: string): string =>
     `"${(val || '').replace(/"/g, '""')}"`;
 
-  // Excel'in madde numarasını tarih sanmasını engellemek için formül-metin hilesi
+  
   const forceText = (val: string): string =>
     `="${(val || '').replace(/"/g, '""')}"`;
 
