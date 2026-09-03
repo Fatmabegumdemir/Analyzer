@@ -1,4 +1,47 @@
-/bin
-/obj
+# IDE / editor
 .vscode/
+.idea/
 *.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# .NET
+bin/
+obj/
+*.dll
+*.pdb
+*.cache
+*.log
+project.lock.json
+artifacts/
+
+# Angular / Node
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+yarn-error.log
+.sass-cache/
+coverage/
+tmp/
+out-tsc/
+
+# Uploads (runtime). Ignore files, keep the folder via .gitkeep.
+**/wwwroot/uploads/*
+!**/wwwroot/uploads/.gitkeep
+
+# Generated reports and debug dumps
+*.csv
+debug_*.json
+debug_bad_json*.json
+CSR_Fark_Raporu.html
+
+# Local secrets (keep the example template)
+**/appsettings.Development.json
+!**/appsettings.Development.json.example
