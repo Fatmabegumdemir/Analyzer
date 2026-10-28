@@ -3,7 +3,6 @@ using Analyzer.Entities;
 using AiAnaliz;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using Pgvector;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,7 +10,6 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Analyzer.Services;
@@ -21,18 +19,15 @@ public class DocumentService
     private readonly AppDBContext _context;
     private readonly PdfParserService _pdfParser;
     private readonly AiService _aiService;
-    private readonly EmbeddingService _embeddingService;
 
     public DocumentService(
         AppDBContext context,
         PdfParserService pdfParser,
-        AiService aiService,
-        EmbeddingService embeddingService)
+        AiService aiService)
     {
         _context = context;
         _pdfParser = pdfParser;
         _aiService = aiService;
-        _embeddingService = embeddingService;
     }
 
     public async Task<List<CsrAiItem>> GetOrAnalyzeAsync(
@@ -74,6 +69,10 @@ public class DocumentService
         }
 
         
+        // Repair source-backed sections before considering a cached comparison.
+        await RefreshSourceSectionsAsync(oldDoc);
+        if (newDoc.Id != oldDoc.Id) await RefreshSourceSectionsAsync(newDoc);
+
         var existingRevision = await _context.DocumentRevisions
             .FirstOrDefaultAsync(r => r.OldDocumentId == oldDoc.Id && r.NewDocumentId == newDoc.Id);
 
@@ -107,11 +106,12 @@ public class DocumentService
                 claimedNewSectionIds.Add(matchingNewSec.Id);
                 claimedOldSectionIds.Add(oldSec.Id);
 
-                string oldContent = CleanContent(oldSec.Content);
-                string newContent = CleanContent(matchingNewSec.Content);
+                string oldContent = oldSec.Content.Trim();
+                string newContent = matchingNewSec.Content.Trim();
 
-                bool isTitleSame = string.Equals(oldSec.AltBaslik?.Trim(), matchingNewSec.AltBaslik?.Trim(), StringComparison.OrdinalIgnoreCase);
-                bool isContentSame = string.Equals(NormalizeWhitespace(oldContent), NormalizeWhitespace(newContent), StringComparison.OrdinalIgnoreCase);
+                bool isTitleSame = string.Equals(oldSec.AltBaslik?.Trim(), matchingNewSec.AltBaslik?.Trim(), StringComparison.Ordinal)
+                    && string.Equals(oldSec.AnaBaslik?.Trim(), matchingNewSec.AnaBaslik?.Trim(), StringComparison.Ordinal);
+                bool isContentSame = string.Equals(NormalizeWhitespace(oldContent), NormalizeWhitespace(newContent), StringComparison.Ordinal);
 
                 if (isTitleSame && isContentSame)
                 {
@@ -146,7 +146,7 @@ public class DocumentService
         foreach (var oldSec in oldSections.Where(s => !claimedOldSectionIds.Contains(s.Id)))
         {
             claimedOldSectionIds.Add(oldSec.Id);
-            string oldContent = CleanContent(oldSec.Content);
+            string oldContent = oldSec.Content.Trim();
 
             if (IsInformationalOrEmpty(oldContent, oldSec.AltBaslik, oldSec.AnaBaslik))
                 continue;
@@ -167,7 +167,7 @@ public class DocumentService
         foreach (var newSec in newSections.Where(s => !claimedNewSectionIds.Contains(s.Id)))
         {
             claimedNewSectionIds.Add(newSec.Id);
-            string newContent = CleanContent(newSec.Content);
+            string newContent = newSec.Content.Trim();
 
             if (IsInformationalOrEmpty(newContent, newSec.AltBaslik, newSec.AnaBaslik))
                 continue;
@@ -193,15 +193,29 @@ public class DocumentService
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             var aiResults = JsonSerializer.Deserialize<List<CsrAiItem>>(aiResponseJson, options) ?? new List<CsrAiItem>();
 
-            foreach (var aiItem in aiResults)
+            // AI supplies explanations only: source fields always come from the stored PDF text.
+            foreach (var oldSection in oldSections)
             {
-                if (string.IsNullOrWhiteSpace(aiItem.Durum))
-                    aiItem.Durum = "Değişti";
-
-                if (string.IsNullOrWhiteSpace(aiItem.AiAnaliz))
-                    aiItem.AiAnaliz = "Bu madde metninde teknik/biçimsel değişiklik tespit edilmiştir.";
-
-                analysisResults.Add(aiItem);
+                var newSection = newSections.FirstOrDefault(section =>
+                    NormalizeMaddeNo(section.MaddeNo) == NormalizeMaddeNo(oldSection.MaddeNo));
+                if (newSection == null || analysisResults.Any(item =>
+                    NormalizeMaddeNo(item.MaddeNo) == NormalizeMaddeNo(oldSection.MaddeNo))) continue;
+                var explanation = aiResults.FirstOrDefault(item =>
+                    NormalizeMaddeNo(item.MaddeNo) == NormalizeMaddeNo(oldSection.MaddeNo));
+                string oldText = oldSection.Content.Trim();
+                string newText = newSection.Content.Trim();
+                string details = DescribeSourceChanges(oldSection, newSection);
+                analysisResults.Add(new CsrAiItem
+                {
+                    MaddeNo = newSection.MaddeNo,
+                    AnaBaslik = newSection.AnaBaslik,
+                    AltBaslik = newSection.AltBaslik,
+                    EskiMetin = oldText,
+                    YeniMetin = newText,
+                    Durum = "Değişti",
+                    AiAnaliz = string.IsNullOrWhiteSpace(explanation?.AiAnaliz)
+                        ? details : explanation.AiAnaliz + " " + details
+                });
             }
         }
 
@@ -223,6 +237,50 @@ public class DocumentService
         await _context.SaveChangesAsync();
 
         return analysisResults;
+    }
+
+    private static bool HasCompleteNumberedStructure(List<DocumentSection> sections) =>
+        sections.Count > 0 && sections.Any(section => section.MaddeNo == "1")
+        && sections.Select(section => section.MaddeNo).Distinct().Count() == sections.Count;
+
+    private async Task RefreshSourceSectionsAsync(Document doc)
+    {
+        if (!File.Exists(doc.FilePath)) return;
+        using var stream = File.OpenRead(doc.FilePath);
+        var parsed = _pdfParser.ParseSections(string.Join("\n", _pdfParser.ExtractPages(stream)));
+        if (!HasCompleteNumberedStructure(parsed)) return;
+        var stored = await _context.DocumentSections.Where(section => section.DocumentId == doc.Id).ToListAsync();
+        bool unchanged = stored.Count == parsed.Count && parsed.All(section => stored.Any(old =>
+            old.MaddeNo == section.MaddeNo && old.AnaBaslik == section.AnaBaslik && old.AltBaslik == section.AltBaslik
+            && NormalizeWhitespace(old.Content) == NormalizeWhitespace(section.Content)));
+        if (unchanged) return;
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        _context.DocumentSections.RemoveRange(stored);
+        foreach (var section in parsed) section.DocumentId = doc.Id;
+        _context.DocumentSections.AddRange(parsed);
+        var revisions = await _context.DocumentRevisions.Where(revision =>
+            revision.OldDocumentId == doc.Id || revision.NewDocumentId == doc.Id).ToListAsync();
+        _context.DocumentRevisions.RemoveRange(revisions);
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+    }
+
+    private static string DescribeSourceChanges(DocumentSection oldSection, DocumentSection newSection)
+    {
+        var details = new List<string>();
+        if (oldSection.AltBaslik != newSection.AltBaslik)
+            details.Add($"Başlık değişikliği: «{oldSection.AltBaslik}» → «{newSection.AltBaslik}».");
+        if (oldSection.AnaBaslik != newSection.AnaBaslik && oldSection.AnaBaslik != oldSection.AltBaslik)
+            details.Add($"Ana başlık değişikliği: «{oldSection.AnaBaslik}» → «{newSection.AnaBaslik}».");
+        var oldWords = Regex.Split(oldSection.Content.Trim(), @"\s+");
+        var newWords = Regex.Split(newSection.Content.Trim(), @"\s+");
+        int prefix = 0;
+        while (prefix < oldWords.Length && prefix < newWords.Length && oldWords[prefix] == newWords[prefix]) prefix++;
+        int oldEnd = oldWords.Length, newEnd = newWords.Length;
+        while (oldEnd > prefix && newEnd > prefix && oldWords[oldEnd - 1] == newWords[newEnd - 1]) { oldEnd--; newEnd--; }
+        if (oldEnd > prefix) details.Add("Çıkarılan/değiştirilen metin: «" + string.Join(" ", oldWords[prefix..oldEnd]) + "».");
+        if (newEnd > prefix) details.Add("Eklenen/yeni metin: «" + string.Join(" ", newWords[prefix..newEnd]) + "».");
+        return string.Join(" ", details);
     }
 
     private static bool IsInformationalOrEmpty(string content, string? altBaslik, string? anaBaslik)
@@ -334,6 +392,15 @@ public class DocumentService
         if (pages.Count == 0)
             throw new InvalidOperationException($"PDF'ten metin çıkarılamadı (belge: {doc.OriginalFileName}).");
 
+        var sourceSections = _pdfParser.ParseSections(string.Join("\n", pages));
+        if (HasCompleteNumberedStructure(sourceSections))
+        {
+            foreach (var section in sourceSections) section.DocumentId = doc.Id;
+            _context.DocumentSections.AddRange(sourceSections);
+            await _context.SaveChangesAsync();
+            return;
+        }
+
         const int chunkSize = 10;
         var allParsedSections = new List<ParsedSectionItem>();
 
@@ -384,37 +451,21 @@ public class DocumentService
             .Where(s => !string.IsNullOrWhiteSpace(s.Content))
             .ToList();
 
-        var semaphore = new SemaphoreSlim(5);
-
-        var embedTask = dedupedSections.Select(async section =>
+        // Comparison uses clause numbers and text; no embedding requests are needed.
+        var docSections = dedupedSections.Select(section =>
         {
-            await semaphore.WaitAsync();
-            try
+            string safeAnaBaslik = string.IsNullOrWhiteSpace(section.AnaBaslik) ? "Genel" : section.AnaBaslik;
+            string safeAltBaslik = string.IsNullOrWhiteSpace(section.AltBaslik) ? safeAnaBaslik : section.AltBaslik;
+            string cleanedContent = CleanContent(section.Content);
+            return new DocumentSection
             {
-                string safeAnaBaslik = string.IsNullOrWhiteSpace(section.AnaBaslik) ? "Genel" : section.AnaBaslik;
-                string safeAltBaslik = string.IsNullOrWhiteSpace(section.AltBaslik) ? safeAnaBaslik : section.AltBaslik;
-                string cleanedContent = CleanContent(section.Content);
-                string contentText = string.IsNullOrWhiteSpace(cleanedContent) ? safeAltBaslik : cleanedContent;
-
-                float[] embeddingArray = await _embeddingService.GetEmbeddingAsync(contentText);
-
-                return new DocumentSection
-                {
-                    DocumentId = doc.Id,
-                    MaddeNo = string.IsNullOrWhiteSpace(section.MaddeNo) ? "-" : section.MaddeNo,
-                    AnaBaslik = safeAnaBaslik,
-                    AltBaslik = safeAltBaslik,
-                    Content = contentText,
-                    Embedding = embeddingArray.Length > 0 ? new Vector(embeddingArray) : null
-                };
-            }
-            finally
-            {
-                semaphore.Release();
-            }
-        });
-
-        var docSections = await Task.WhenAll(embedTask);
+                DocumentId = doc.Id,
+                MaddeNo = section.MaddeNo,
+                AnaBaslik = safeAnaBaslik,
+                AltBaslik = safeAltBaslik,
+                Content = string.IsNullOrWhiteSpace(cleanedContent) ? safeAltBaslik : cleanedContent
+            };
+        }).ToList();
         _context.DocumentSections.AddRange(docSections);
 
         await _context.SaveChangesAsync();

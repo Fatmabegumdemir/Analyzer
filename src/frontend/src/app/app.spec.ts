@@ -1,23 +1,30 @@
 import { TestBed } from '@angular/core/testing';
-import { App } from './app';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { AppComponent } from './app.component';
 
-describe('App', () => {
+describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [App],
+      imports: [AppComponent],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
   });
-
-  it('should create the app', () => {
-    const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+  it('loads saved folders on startup', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    TestBed.inject(HttpTestingController).expectOne('/api/Folder/list')
+      .flush([{ id: 1, folderName: 'CSR' }]);
+    expect(fixture.componentInstance.folders).toEqual([{ id: 1, folderName: 'CSR' }]);
   });
-
-  it('should render title', async () => {
-    const fixture = TestBed.createComponent(App);
-    await fixture.whenStable();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, ai-analiz-ui');
+  it('requires both documents before analysis', () => {
+    const app = TestBed.createComponent(AppComponent).componentInstance;
+    expect(app.canAnalyze).toBe(false);
+    app.oldFile = new File(['old'], 'old.pdf');
+    expect(app.canAnalyze).toBe(false);
+    app.newMode = 'existing';
+    app.newSelectedDocumentId = 2;
+    expect(app.canAnalyze).toBe(true);
   });
 });

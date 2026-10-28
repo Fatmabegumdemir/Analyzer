@@ -3,12 +3,13 @@
     "DefaultConnection": "Host=localhost;Port=5432;Database=docsence_db;Username=postgres;Password=YOUR_PASSWORD;Include Error Detail=true"
   },
   "Gemini": {
-    "ApiKey": ""
+    "ApiKey": "",
+    "Model": "gemini-3.6-flash"
   },
   "Logging": {
-    "LogLevel": {                                   
+    "LogLevel": {
       "Default": "Information",
       "Microsoft.AspNetCore": "Warning"
     }
   }
-}   
+}

@@ -1,4 +1,4 @@
-﻿using Analyzer.Services;
+using Analyzer.Services;
 using AiAnaliz;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-Console.WriteLine($"[DEBUG] Kullanılan connection string: {connectionString}");
+
 builder.Services.AddDbContext<AppDBContext>(options =>
     options.UseNpgsql(connectionString, o => o.UseVector()));
 
@@ -16,8 +16,8 @@ var geminiApiKey = builder.Configuration["Gemini:ApiKey"] ?? string.Empty;
 
 
 builder.Services.AddScoped<PdfParserService>();
-builder.Services.AddScoped(_ => new AiService(geminiApiKey));
-builder.Services.AddScoped(_ => new EmbeddingService(geminiApiKey));
+builder.Services.AddScoped(_ => new AiService(geminiApiKey, builder.Configuration["Gemini:Model"] ?? "gemini-3.6-flash"));
+
 builder.Services.AddScoped<DocumentService>();
 
 

@@ -1,24 +1,12 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
-
-interface FolderDto {
-  id: number;
-  folderName: string;
-}
-
-interface DocumentDto{
-  id:number;
-  originalFileName: string;
-  customFileName: string;
-  uploadedAt: string;
-}
+import { ApiService, FolderDto, DocumentDto } from './services/api';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule], 
+  imports: [CommonModule, FormsModule],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
@@ -47,7 +35,7 @@ export class AppComponent implements OnInit {
   results: any[] = [];
 
   constructor(
-    private http : HttpClient,
+    private api: ApiService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -55,7 +43,7 @@ export class AppComponent implements OnInit {
     this.loadFolders();
   }
   loadFolders(): void {
-    this.http.get<FolderDto[]>('http://localhost:5000/api/Folder/list')
+    this.api.getFolders()
       .subscribe({
         next: (folders) => {
           this.folders = folders;
@@ -75,7 +63,7 @@ export class AppComponent implements OnInit {
     this.oldSelectedDocumentId = null;
     this.oldFolderDocuments  = [];
     if(this.oldSelectedFolderId){
-      this.http.get<DocumentDto[]>(`http://localhost:5000/api/Folder/${this.oldSelectedFolderId}/documents`)
+      this.api.getDocuments(this.oldSelectedFolderId)
        .subscribe({
         next: (docs)=>{
           this.oldFolderDocuments = docs;
@@ -98,7 +86,7 @@ export class AppComponent implements OnInit {
     this.newSelectedDocumentId = null;
     this.newFolderDocuments = [];
     if(this.newSelectedFolderId){
-      this.http.get<DocumentDto[]>(`http://localhost:5000/api/Folder/${this.newSelectedFolderId}/documents`)
+      this.api.getDocuments(this.newSelectedFolderId)
       .subscribe({
         next: (docs) => {
           this.newFolderDocuments = docs;
@@ -141,7 +129,7 @@ export class AppComponent implements OnInit {
 
       }
 
-      this.http.post<any[]>('http://localhost:5000/api/Document/analyze', formData)
+      this.api.analyzePdfs(formData)
         .subscribe({
           next: (response) => {
             this.results = response;

@@ -14,11 +14,13 @@ namespace AiAnaliz;
 public class AiService
 {
     private readonly string _apiKey;
+    private readonly string _model;
     private readonly HttpClient _httpClient = new HttpClient() { Timeout = TimeSpan.FromMinutes(10) };
 
-    public AiService(string apiKey)
+    public AiService(string apiKey, string model = "gemini-3.6-flash")
     {
         _apiKey = apiKey ?? string.Empty;
+        _model = model;
     }
 
     private readonly string _analysisPrompt = @"<role>
@@ -267,7 +269,7 @@ Sana bir teknik şartnamenin ham metni verilmiştir. Görevin bu metni hiyerarş
 
     private async Task<string> CallGeminiApiAsync(string prompt, string oldBase64, string newBase64)
     {
-        string url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={_apiKey}";
+        string url = $"https://generativelanguage.googleapis.com/v1beta/models/{Uri.EscapeDataString(_model)}:generateContent";
         var partsList = new List<object>
         {
             new { text = prompt }
@@ -305,7 +307,8 @@ Sana bir teknik şartnamenin ham metni verilmiştir. Görevin bu metni hiyerarş
 
         for (int attempt = 1; attempt <= maxRetries; attempt++)
         {
-            var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
+            httpRequest.Headers.Add("x-goog-api-key", _apiKey);
             httpRequest.Content = JsonContent.Create(requestBody);
 
             var response = await _httpClient.SendAsync(httpRequest);
@@ -339,7 +342,7 @@ Sana bir teknik şartnamenin ham metni verilmiştir. Görevin bu metni hiyerarş
 
     private async Task<string> CallGeminiTextApiAsync(string prompt, object response_schema)
     {
-        string url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={_apiKey}";
+        string url = $"https://generativelanguage.googleapis.com/v1beta/models/{Uri.EscapeDataString(_model)}:generateContent";
 
         var requestBody = new
         {
@@ -367,7 +370,8 @@ Sana bir teknik şartnamenin ham metni verilmiştir. Görevin bu metni hiyerarş
 
         for (int attempt = 1; attempt <= maxRetries; attempt++)
         {
-            var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
+            httpRequest.Headers.Add("x-goog-api-key", _apiKey);
             httpRequest.Content = JsonContent.Create(requestBody);
 
             var response = await _httpClient.SendAsync(httpRequest);

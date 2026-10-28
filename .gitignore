@@ -45,3 +45,6 @@ CSR_Fark_Raporu.html
 # Local secrets (keep the example template)
 **/appsettings.Development.json
 !**/appsettings.Development.json.example
+
+# Personal generated documents
+output/

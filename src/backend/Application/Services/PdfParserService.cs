@@ -1,112 +1,57 @@
 using System.Text.RegularExpressions;
 using Analyzer.Entities;
 using UglyToad.PdfPig;
+using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
 
 namespace Analyzer.Services;
 
 public class PdfParserService
 {
-    
-    public string ExtractTextFromPdf(Stream pdfStream)
-{
-    if (pdfStream == null || pdfStream.Length == 0) return string.Empty;
+    public string ExtractTextFromPdf(Stream pdfStream) => string.Join("\n", ExtractPages(pdfStream));
 
-    if (pdfStream.CanSeek && pdfStream.Position != 0) pdfStream.Position = 0;
-
-    using var pdfDocument = PdfDocument.Open(pdfStream);
-
-    var pages = pdfDocument.GetPages().ToList();
-    var sb = new System.Text.StringBuilder();
-
-    for (int i = 0; i < pages.Count; i++)
+    public List<string> ExtractPages(Stream pdfStream)
     {
-        sb.Append(pages[i].Text.Trim());
-        sb.Append($"\n\n[SAYFA_SONU:{i + 1}]\n\n");
+        if (pdfStream == null || pdfStream.Length == 0) return new();
+        if (pdfStream.CanSeek) pdfStream.Position = 0;
+        using var document = PdfDocument.Open(pdfStream);
+        return document.GetPages().Select(page => ContentOrderTextExtractor.GetText(page).Trim()).ToList();
     }
 
-    return sb.ToString();
-}
-public List<string> ExtractPages(Stream pdfStream)
-{
-    if (pdfStream == null || pdfStream.Length == 0) return new List<string>();
-    if (pdfStream.CanSeek && pdfStream.Position != 0) pdfStream.Position = 0;
-
-    using var pdfDocument = PdfDocument.Open(pdfStream);
-    return pdfDocument.GetPages().Select(p => p.Text.Trim()).ToList();
-}
-
-    
+    // Prefer source text for clearly numbered headings; AI is a fallback for other layouts.
     public List<DocumentSection> ParseSections(string fullText)
     {
         var sections = new List<DocumentSection>();
-        if (string.IsNullOrWhiteSpace(fullText)) return sections;
-
-        
-        var linePattern = new Regex(@"^(?<maddeNo>\d+(\.\d+)*)\s+(?<baslik>[^\r\n]+)", RegexOptions.Multiline);
-
-        var lines = fullText.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-        
-        DocumentSection? currentSection = null;
-
-        foreach (var line in lines)
+        var heading = new Regex(@"^(?<number>\d+(?:\.\d+)*)(?<dot>\.)?\s+(?<title>\p{L}[^\r\n]*)$");
+        DocumentSection? current = null;
+        string mainTitle = "";
+        foreach (string line in fullText.Split('\n'))
         {
-            var trimmedLine = line.Trim();
-            var match = linePattern.Match(trimmedLine);
-
-            if (match.Success)
+            string text = line.Trim();
+            if (string.IsNullOrWhiteSpace(text)) continue;
+            var match = heading.Match(text);
+            string candidate = match.Groups["number"].Value;
+            bool isHeading = match.Success && (candidate.Contains('.')
+                ? sections.Any(section => section.MaddeNo == candidate.Split('.')[0])
+                : match.Groups["dot"].Success);
+            if (isHeading)
             {
-                
-                if (currentSection != null)
+                string number = match.Groups["number"].Value;
+                string title = match.Groups["title"].Value;
+                if (!number.Contains('.')) mainTitle = title;
+                current = new DocumentSection
                 {
-                    sections.Add(currentSection);
-                }
-
-                string maddeNo = match.Groups["maddeNo"].Value;
-                string baslikText = match.Groups["baslik"].Value.Trim();
-
-                
-                string anaBaslik = baslikText;
-                string altBaslik = baslikText; 
-
-                if (maddeNo.Contains("."))
-                {
-                    
-                    altBaslik = baslikText;
-                }
-
-                currentSection = new DocumentSection
-                {
-                    MaddeNo = maddeNo,
-                    AnaBaslik = string.IsNullOrWhiteSpace(anaBaslik) ? "Genel Şartlar" : anaBaslik,
-                    AltBaslik = string.IsNullOrWhiteSpace(altBaslik) ? "Detay Maddesi" : altBaslik, 
-                    Content = trimmedLine
+                    MaddeNo = number,
+                    AnaBaslik = string.IsNullOrWhiteSpace(mainTitle) ? title : mainTitle,
+                    AltBaslik = title,
+                    Content = ""
                 };
+                sections.Add(current);
             }
-            else if (currentSection != null)
+            else if (current != null)
             {
-                
-                currentSection.Content += "\n" + trimmedLine;
+                current.Content += (current.Content.Length == 0 ? "" : " ") + text;
             }
         }
-
-        
-        if (currentSection != null)
-        {
-            sections.Add(currentSection);
-        }
-
-        
-        if (sections.Count == 0 && !string.IsNullOrWhiteSpace(fullText))
-        {
-            sections.Add(new DocumentSection
-            {
-                MaddeNo = "1",
-                AnaBaslik = "Genel Şartname Metni",
-                AltBaslik = "Genel Şartname Metni",
-                Content = fullText
-            });
-        }
-
         return sections;
     }
 }
